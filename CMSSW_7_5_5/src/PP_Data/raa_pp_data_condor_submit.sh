@@ -10,7 +10,7 @@ filelist=pp_data_forests.txt
 
 nFiles=`wc -l < $filelist`
 tardir=`pwd`
-radius=3
+radius=4
 jetType="PF"
 
 echo "nFiles in list: $nFiles"

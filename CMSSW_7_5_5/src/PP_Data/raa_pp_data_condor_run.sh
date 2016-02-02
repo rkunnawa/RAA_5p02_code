@@ -34,8 +34,8 @@ root -b -l <<EOF
 EOF
 
 # root -b -q RAA_read_mc_pbpb.C\+\($startfile,$endfile\)
-mv $outfile /mnt/hadoop/cms/store/user/rkunnawa/rootfiles/JetRAA_5p02TeV/Jan2016/
+mv $outfile /mnt/hadoop/cms/store/user/rkunnawa/rootfiles/JetRAA_5p02TeV/Feb2016/
 
 echo "Done!"
 
-echo "Copied output files to hadoop rootfiles/JetRAA/June22" 
+echo "Copied output files to hadoop" 

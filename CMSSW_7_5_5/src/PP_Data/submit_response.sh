@@ -11,15 +11,16 @@ filelist=pp_data_forests.txt
 nFiles=`wc -l < $filelist`
 tardir=`pwd`
 isMC=0
+radius=4
 
 echo "nFiles in list: $nFiles"
 while [ $counter -lt $1 ]
 do
     echo $counter >> Submitted
     
-    Error="ak$radius-ppData-Response-$endfile.err"
-    Output="ak$radius-ppData-Response-$endfile.out"
-    Log="ak$radius-ppData-Response-$endfile.log"
+    Error="ppData-Response-$endfile.err"
+    Output="ppData-Response-$endfile.out"
+    Log="ppData-Response-$endfile.log"
     
     startfile=$(( $counter * $2 ))
     endfile=$(( ($counter + 1) * $2 ))
@@ -28,7 +29,7 @@ do
         let counter=$1
     fi
 
-    outfile="PP_5p02TeV_Data_ak3PF_MPFResponse_${endfile}.root"
+    outfile="PP_5p02TeV_Data_ak${radius}PF_MPFResponse_${endfile}.root"
     
     # Condor submit file
     cat > subfile <<EOF
@@ -43,7 +44,7 @@ x509userproxy=/tmp/x509up_u2142
 Executable     = run_response.sh
 +AccountingGroup = "group_cmshi.rkunnawa"
 #+IsMadgraph = 1
-Arguments      = $startfile $endfile $isMC $outfile
+Arguments      = $startfile $endfile $radius $isMC $outfile
 # input files. in this case, there are none.
 Input          = /dev/null
 # log files

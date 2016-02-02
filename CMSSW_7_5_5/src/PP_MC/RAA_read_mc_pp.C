@@ -292,13 +292,14 @@ void RAA_read_mc_pp(int startfile = 0,
   jetpp[2]->SetBranchAddress("eMax",&eMax_F);
   jetpp[2]->SetBranchAddress("muSum",&muSum_F);
   jetpp[2]->SetBranchAddress("muMax",&muMax_F);
-  // jetpp[0]->SetBranchAddress("HLT_PAJet40_NoJetID_v1",&jet40_F);
-  // jetpp[0]->SetBranchAddress("HLT_PAJet40_NoJetID_v1_Prescl",&jet40_p_F);
-  // jetpp[0]->SetBranchAddress("HLT_PAJet60_NoJetID_v1",&jet60_F);
-  // jetpp[0]->SetBranchAddress("HLT_PAJet60_NoJetID_v1_Prescl",&jet60_p_F);
-  // jetpp[0]->SetBranchAddress("HLT_PAJet80_NoJetID_v1",&jet80_F);
-  // jetpp[0]->SetBranchAddress("HLT_PAJet80_NoJetID_v1_Prescl",&jet80_p_F);
-
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet40_Eta5p1_v1",&jet40_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet40_Eta5p1_v1_Prescl",&jet40_p_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet60_Eta5p1_v1",&jet60_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet60_Eta5p1_v1_Prescl",&jet60_p_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet80_Eta5p1_v1",&jet80_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet80_Eta5p1_v1_Prescl",&jet80_p_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet100_Eta5p1_v1",&jet100_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet100_Eta5p1_v1_Prescl",&jet100_p_F);
 
   double pthatweight;
   // // int evt_w;
@@ -315,11 +316,13 @@ void RAA_read_mc_pp(int startfile = 0,
   TFile *fout = new TFile(kFoname.c_str(),"RECREATE");
   fout->cd();
   
+  // TH1F *hpp_Jet100_gen,*hpp_Jet100_reco;
   // TH1F *hpp_Jet80_gen,*hpp_Jet80_reco;
   // TH1F *hpp_Jet60_gen,*hpp_Jet60_reco;
   // TH1F *hpp_Jet40_gen,*hpp_Jet40_reco;
   // TH1F *hpp_JetComb_gen,*hpp_JetComb_reco;
 
+  // TH1F *hpp_anaBin_Jet100_gen,*hpp_anaBin_Jet100_reco;
   // TH1F *hpp_anaBin_Jet80_gen,*hpp_anaBin_Jet80_reco;
   // TH1F *hpp_anaBin_Jet60_gen,*hpp_anaBin_Jet60_reco;
   // TH1F *hpp_anaBin_Jet40_gen,*hpp_anaBin_Jet40_reco;
@@ -598,11 +601,11 @@ void RAA_read_mc_pp(int startfile = 0,
 
   // Add the Jet ID plots:
   // list of variables:
-  std::string var[19] = {"jtpt" ,"rawpt", "jteta", "jtphi", "trkMax", "trkSum", "trkHardSum", "chMax", "chSum", "chHardSum","phMax", "phSum", "phHardSum", "neMax", "neSum", "eMax", "eSum", "muMax", "muSum" };
-  TH1F * hJetQA[2][19];
+  std::string var[21] = {"jtpt" ,"rawpt", "jteta", "jtphi", "trkMax", "trkSum", "trkHardSum", "chMax", "chSum", "chHardSum","phMax", "phSum", "phHardSum", "neMax", "neSum", "eMax", "eSum", "muMax", "muSum" ,"Aj","xj"};
+  TH1F * hJetQA[2][21];
 
   for(int k = 0; k<2; ++k){
-    for(int j = 0; j<19; ++j){
+    for(int j = 0; j<21; ++j){
       if(j==2) hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),100, -5, +5);
       else if(j==3) hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),100, -4, +4);
       else if(j<=1)hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),500, 0, 500);
@@ -743,7 +746,7 @@ void RAA_read_mc_pp(int startfile = 0,
 	// charged hadron multiplicity > 0
 	// charged EM fraction < 0.99 
 	
-	if(chSum_F[jet]/recpt<0.99 && chSum_F[jet]/recpt>0 && neSum_F[jet]/recpt<0.99 && chN_F[jet]>0 && eSum_F[jet]/recpt<0.99){
+	if(chSum_F[jet]/recpt>0 && neSum_F[jet]/recpt<0.99 && chN_F[jet]>0 && phSum_F[jet]/recpt<0.99){
 	  hJetQA[1][0]->Fill(recpt, weight_eS);
 	  hJetQA[1][1]->Fill(rawpt_F[jet], weight_eS);
 	  hJetQA[1][2]->Fill(eta_F[jet], weight_eS);
@@ -954,6 +957,10 @@ void RAA_read_mc_pp(int startfile = 0,
       */
       
     }// jet loop
+
+    hJetQA[0][19]->Fill((float)(pt_F[0]-pt_F[1])/(pt_F[0]+pt_F[1]), weight_eS);
+    hJetQA[0][20]->Fill((float)(pt_F[1]/pt_F[0]), weight_eS);
+	    
 
     //if(pt.size() <=1) continue;
 

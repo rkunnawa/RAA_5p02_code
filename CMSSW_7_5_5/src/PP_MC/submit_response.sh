@@ -11,6 +11,7 @@ filelist=pp_mc_forests_new.txt
 nFiles=`wc -l < $filelist`
 tardir=`pwd`
 isMC=1
+radius=3
 
 echo "nFiles in list: $nFiles"
 while [ $counter -lt $1 ]
@@ -28,7 +29,7 @@ do
         let counter=$1
     fi
 
-    outfile="PP_5p02TeV_MC_ak3PF_MPFResponse_${endfile}.root"
+    outfile="PP_5p02TeV_MC_ak${radius}PF_MPFResponse_${endfile}.root"
     
     # Condor submit file
     cat > subfile <<EOF
@@ -43,7 +44,7 @@ x509userproxy=/tmp/x509up_u2142
 Executable     = run_response.sh
 +AccountingGroup = "group_cmshi.rkunnawa"
 #+IsMadgraph = 1
-Arguments      = $startfile $endfile $isMC $outfile
+Arguments      = $startfile $endfile $isMC $radius $outfile
 # input files. in this case, there are none.
 Input          = /dev/null
 # log files

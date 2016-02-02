@@ -23,13 +23,14 @@ gcc --version
 
 startfile=$1
 endfile=$2
-isMC=$3
-outfile=$4
+radius=$3
+isMC=$4
+outfile=$5
 
 echo "Processing..."
 
 root -b -l <<EOF
-.x deriveDijetResponse.C+($startfile,$endfile, $isMC,"$outfile")
+.x deriveDijetResponse.C+($startfile,$endfile, $radius, $isMC,"$outfile")
 .q
 EOF
 

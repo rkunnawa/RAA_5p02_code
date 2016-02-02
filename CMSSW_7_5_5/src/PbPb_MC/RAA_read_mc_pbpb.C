@@ -195,7 +195,9 @@ void RAA_read_mc_pbpb(int startfile = 0,
 
   std::string infile_Forest;
 
-  infile_Forest = "jetRAA_PbPb_mc_forests.txt";
+  //infile_Forest = "jetRAA_PbPb_mc_forests.txt";
+  //infile_Forest = "pthat30_Vstest.txt";
+  infile_Forest = "pthat80_Vstest.txt";
   std::ifstream instr_Forest(infile_Forest.c_str(),std::ifstream::in);
   std::string filename_Forest;
   

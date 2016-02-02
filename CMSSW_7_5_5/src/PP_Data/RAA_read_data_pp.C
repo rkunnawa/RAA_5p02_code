@@ -78,6 +78,19 @@ const int ptbins[] = {15, 30, 50, 80, 120, 170, 220, 300, 500};
 const int nbins_pt = sizeof(ptbins)/sizeof(int) -1;
 
 
+double trigComb(bool *trg, int *pscl, double pt){
+
+  double weight=0;
+
+  if(trg[3] && pt>=100) weight = pscl[3];
+  if(trg[2] && pt>=80 && pt<100) weight = pscl[2];
+  if(trg[1] && pt>=60 && pt<80) weight = pscl[1];
+  if(trg[0] && pt>=40 && pt<60) weight = pscl[0];
+  
+  return weight;
+  
+}
+
 using namespace std;
 
 void RAA_read_data_pp(int startfile = 0,
@@ -94,7 +107,7 @@ void RAA_read_data_pp(int startfile = 0,
 
   gStyle->SetOptStat(0);
 
-  bool printDebug = false;
+  bool printDebug = true;
   if(printDebug)cout<<"radius = "<<radius<<endl;
   
   TDatime date;
@@ -132,10 +145,10 @@ void RAA_read_data_pp(int startfile = 0,
     "t",
     //"trackTree"
     "HiTree",
-    "HLT_AK4PFJet40_Eta5p1_v",
-    "HLT_AK4PFJet60_Eta5p1_v",
-    "HLT_AK4PFJet80_Eta5p1_v",
-    "HLT_AK4PFJet100_Eta5p1_v"
+    "HLT_AK4CaloJet40_Eta5p1_v",
+    "HLT_AK4CaloJet60_Eta5p1_v",
+    "HLT_AK4CaloJet80_Eta5p1_v",
+    "HLT_AK4CaloJet100_Eta5p1_v"
   };
 
   for(int t = 0;t<N;t++){
@@ -215,6 +228,10 @@ void RAA_read_data_pp(int startfile = 0,
   int jet60_p_F;
   int jet80_p_F;
   int jet100_p_F;
+  int jet40_l1seed_p_F;
+  int jet60_l1seed_p_F;
+  int jet80_l1seed_p_F;
+  int jet100_l1seed_p_F;  
   ULong64_t evt_F;
   UInt_t run_F;
   UInt_t lumi_F;
@@ -258,15 +275,19 @@ void RAA_read_data_pp(int startfile = 0,
   jetpp[2]->SetBranchAddress("eMax",&eMax_F);
   jetpp[2]->SetBranchAddress("muSum",&muSum_F);
   jetpp[2]->SetBranchAddress("muMax",&muMax_F);
-  jetpp[0]->SetBranchAddress("HLT_AK4PFJet40_Eta5p1_v1",&jet40_F);
-  jetpp[0]->SetBranchAddress("HLT_AK4PFJet40_Eta5p1_v1_Prescl",&jet40_p_F);
-  jetpp[0]->SetBranchAddress("HLT_AK4PFJet60_Eta5p1_v1",&jet60_F);
-  jetpp[0]->SetBranchAddress("HLT_AK4PFJet60_Eta5p1_v1_Prescl",&jet60_p_F);
-  jetpp[0]->SetBranchAddress("HLT_AK4PFJet80_Eta5p1_v1",&jet80_F);
-  jetpp[0]->SetBranchAddress("HLT_AK4PFJet80_Eta5p1_v1_Prescl",&jet80_p_F);
-  jetpp[0]->SetBranchAddress("HLT_AK4PFJet100_Eta5p1_v1",&jet100_F);
-  jetpp[0]->SetBranchAddress("HLT_AK4PFJet100_Eta5p1_v1_Prescl",&jet100_p_F);
-
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet40_Eta5p1_v1",&jet40_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet40_Eta5p1_v1_Prescl",&jet40_p_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet60_Eta5p1_v1",&jet60_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet60_Eta5p1_v1_Prescl",&jet60_p_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet80_Eta5p1_v1",&jet80_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet80_Eta5p1_v1_Prescl",&jet80_p_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet100_Eta5p1_v1",&jet100_F);
+  jetpp[0]->SetBranchAddress("HLT_AK4CaloJet100_Eta5p1_v1_Prescl",&jet100_p_F);
+  jetpp[0]->SetBranchAddress("L1_SingleJet28_BptxAND_Prescl",&jet40_l1seed_p_F);
+  jetpp[0]->SetBranchAddress("L1_SingleJet40_BptxAND_Prescl",&jet60_l1seed_p_F);
+  jetpp[0]->SetBranchAddress("L1_SingleJet48_BptxAND_Prescl",&jet80_l1seed_p_F);
+  jetpp[0]->SetBranchAddress("L1_SingleJet52_BptxAND_Prescl",&jet100_l1seed_p_F);
+    
   std::vector<float> *trgObjpt_40 = 0;
   jetpp[4]->SetBranchAddress("pt",&trgObjpt_40);
   std::vector<float> *trgObjpt_60 = 0;
@@ -285,11 +306,11 @@ void RAA_read_data_pp(int startfile = 0,
 
   // Add the Jet ID plots:
   // list of variables:
-  std::string var[19] = {"jtpt" ,"rawpt", "jteta", "jtphi", "trkMax", "trkSum", "trkHardSum", "chMax", "chSum", "chHardSum","phMax", "phSum", "phHardSum", "neMax", "neSum", "eMax", "eSum", "muMax", "muSum" };
-  TH1F * hJetQA[2][19];
+  std::string var[21] = {"jtpt" ,"rawpt", "jteta", "jtphi", "trkMax", "trkSum", "trkHardSum", "chMax", "chSum", "chHardSum","phMax", "phSum", "phHardSum", "neMax", "neSum", "eMax", "eSum", "muMax", "muSum","Aj","xj"};
+  TH1F * hJetQA[2][21];
 
   for(int k = 0; k<2; ++k){
-    for(int j = 0; j<19; ++j){
+    for(int j = 0; j<21; ++j){
       if(j==2) hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),100, -5, +5);
       else if(j==3) hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),100, -4, +4);
       else if(j<=1)hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),500, 0, 500);
@@ -299,11 +320,12 @@ void RAA_read_data_pp(int startfile = 0,
 
   TH1F * hVz = new TH1F("hVz","",200, -20, 20);
 
-  TH1F *hpp_TrgObj100;
-  TH1F *hpp_TrgObj80;
-  TH1F *hpp_TrgObj60;
-  TH1F *hpp_TrgObj40;
-  TH1F *hpp_TrgObjComb;
+  TH1F *hpp_TrgObj100[2];
+  TH1F *hpp_TrgObj80[2];
+  TH1F *hpp_TrgObj60[2];
+  TH1F *hpp_TrgObj40[2];
+  TH1F *hpp_TrgObjComb[2];
+  TH1F *hpp_CombJetpT[2];
 
   // TH1F *hpp_JEC_TrgObj80;
   // TH1F *hpp_JEC_TrgObj60;
@@ -330,12 +352,21 @@ void RAA_read_data_pp(int startfile = 0,
   // TH1F *hpp_anaBin_TrgObj40;
   // TH1F *hpp_anaBin_TrgObjComb;
 
-  hpp_TrgObj100 = new TH1F(Form("hpp_HLT100_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 100 R%d %s ",radius,etaWidth),2000, 0, 2000);
-  hpp_TrgObj80 = new TH1F(Form("hpp_HLT80_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 80 R%d %s ",radius,etaWidth),2000, 0, 2000);
-  hpp_TrgObj60 = new TH1F(Form("hpp_HLT60_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 60 && !jet80 R%d %s ",radius,etaWidth),2000, 0, 2000);
-  hpp_TrgObj40 = new TH1F(Form("hpp_HLT40_R%d_%s",radius,etaWidth),Form("Spectra from Jet 40 && !jet60 && !jet80 R%d %s ",radius,etaWidth),2000, 0, 2000);
-  hpp_TrgObjComb = new TH1F(Form("hpp_HLTComb_R%d_%s",radius,etaWidth),Form("Trig Combined Spectra R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_TrgObj100[0] = new TH1F(Form("hpp_HLT100_noJetID_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 100 R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_TrgObj80[0] = new TH1F(Form("hpp_HLT80_noJetID_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 80 R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_TrgObj60[0] = new TH1F(Form("hpp_HLT60_noJetID_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 60 && !jet80 R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_TrgObj40[0] = new TH1F(Form("hpp_HLT40_noJetID_R%d_%s",radius,etaWidth),Form("Spectra from Jet 40 && !jet60 && !jet80 R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_TrgObjComb[0] = new TH1F(Form("hpp_HLTComb_noJetID_R%d_%s",radius,etaWidth),Form("Trig Combined Spectra R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_CombJetpT[0] = new TH1F(Form("hpp_TrgCombTest_noJetID_R%d_%s",radius,etaWidth),Form("Trig Combined Spectra KurtMethod R%d %s ",radius,etaWidth),2000, 0, 2000);
 
+  hpp_TrgObj100[1] = new TH1F(Form("hpp_HLT100_JetID_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 100 R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_TrgObj80[1] = new TH1F(Form("hpp_HLT80_JetID_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 80 R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_TrgObj60[1] = new TH1F(Form("hpp_HLT60_JetID_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 60 && !jet80 R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_TrgObj40[1] = new TH1F(Form("hpp_HLT40_JetID_R%d_%s",radius,etaWidth),Form("Spectra from Jet 40 && !jet60 && !jet80 R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_TrgObjComb[1] = new TH1F(Form("hpp_HLTComb_JetID_R%d_%s",radius,etaWidth),Form("Trig Combined Spectra R%d %s ",radius,etaWidth),2000, 0, 2000);
+  hpp_CombJetpT[1] = new TH1F(Form("hpp_TrgCombTest_JetID_R%d_%s",radius,etaWidth),Form("Trig Combined Spectra KurtMethod R%d %s ",radius,etaWidth),2000, 0, 2000);
+
+  
   // hpp_JEC_TrgObj80 = new TH1F(Form("hpp_JEC_HLT80_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 80 R%d %s ",radius,etaWidth),1000, 0, 1000);
   // hpp_JEC_TrgObj60 = new TH1F(Form("hpp_JEC_HLT60_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 60 && !jet80 R%d %s ",radius,etaWidth),1000, 0, 1000);
   // hpp_JEC_TrgObj40 = new TH1F(Form("hpp_JEC_HLT40_R%d_%s",radius,etaWidth),Form("Spectra from Jet 40 && !jet60 && !jet80 R%d %s ",radius,etaWidth),1000, 0, 1000);
@@ -362,21 +393,28 @@ void RAA_read_data_pp(int startfile = 0,
   // hpp_anaBin_TrgObj40 = new TH1F(Form("hpp_anaBin_HLT40_R%d_%s",radius,etaWidth),Form("Spectra from Jet 40 && !jet60 && !jet80 R%d %s ",radius,etaWidth),nbins_pt, boundaries_pt);
   // hpp_anaBin_TrgObjComb = new TH1F(Form("hpp_anaBin_HLTComb_R%d_%s",radius,etaWidth),Form("Trig Combined Spectra R%d %s ",radius,etaWidth),nbins_pt, boundaries_pt);
 
-  double weight_eS = 1.0;
-
   // now start the event loop for each file. 
   
-  if(printDebug) cout<<"Running through all the events now"<<endl;
   Long64_t nentries = jetpp[0]->GetEntries();
   //Long64_t nGoodEvt = 0;
-  if(printDebug) nentries = 10;
+  //if(printDebug) nentries = 100;
+  
+  cout<<"Running through all the "<<nentries<<" events now"<<endl;
+
   TRandom3 rnd; 
   //rnd.SetSeed(endfile);
+
+  // variables for event summary
+  Long64_t NEvents = 0;
+  Long64_t NEvents_100 = 0;
+  Long64_t NEvents_80 = 0;
+  Long64_t NEvents_60 = 0;
+  Long64_t NEvents_40 = 0;  
   
   for(int nEvt = 0; nEvt < nentries; ++ nEvt) {
 
     if(nEvt%10000 == 0)cout<<nEvt<<"/"<<nentries<<endl;
-    if(printDebug)cout<<"nEvt = "<<nEvt<<endl;
+    //if(printDebug)cout<<"nEvt = "<<nEvt<<endl;
 
     for(int i = 0; i<N;++i)
       jetpp[i]->GetEntry(nEvt);
@@ -393,30 +431,88 @@ void RAA_read_data_pp(int startfile = 0,
     bool is80 = false;
     bool is100 = false;
 
-    vector <float> arry_TrgObj;
-    if(trgObjpt_40->size()!=0)
-      for(unsigned i = 0; i<trgObjpt_40->size(); ++i) arry_TrgObj.push_back(trgObjpt_40->at(i));
-    if(trgObjpt_60->size()!=0) 
-      for(unsigned i = 0; i<trgObjpt_60->size(); ++i) arry_TrgObj.push_back(trgObjpt_60->at(i));
-    if(trgObjpt_80->size()!=0) 
-      for(unsigned i = 0; i<trgObjpt_80->size(); ++i) arry_TrgObj.push_back(trgObjpt_80->at(i));
-    if(trgObjpt_100->size()!=0)
-      for(unsigned i = 0; i<trgObjpt_100->size(); ++i) arry_TrgObj.push_back(trgObjpt_100->at(i));
+    // vector <float> arry_TrgObj;
+    // if(trgObjpt_40->size()!=0)
+    //   for(unsigned i = 0; i<trgObjpt_40->size(); ++i) arry_TrgObj.push_back(trgObjpt_40->at(i));
+    // if(trgObjpt_60->size()!=0) 
+    //   for(unsigned i = 0; i<trgObjpt_60->size(); ++i) arry_TrgObj.push_back(trgObjpt_60->at(i));
+    // if(trgObjpt_80->size()!=0) 
+    //   for(unsigned i = 0; i<trgObjpt_80->size(); ++i) arry_TrgObj.push_back(trgObjpt_80->at(i));
+    // if(trgObjpt_100->size()!=0)
+    //   for(unsigned i = 0; i<trgObjpt_100->size(); ++i) arry_TrgObj.push_back(trgObjpt_100->at(i));
 
-    // find the max in the array
-    float TrgObjMax = 0.0;
-    for(unsigned i = 0; i<arry_TrgObj.size();++i){
-      if(arry_TrgObj[i] > TrgObjMax){
-	TrgObjMax = arry_TrgObj[i];
+    // // find the max in the array
+    // float TrgObjMax = 0.0;
+    // for(unsigned i = 0; i<arry_TrgObj.size();++i){
+    //   if(arry_TrgObj[i] > TrgObjMax){
+    // 	TrgObjMax = arry_TrgObj[i];
+    //   }
+    // }
+
+    // if(jet40_F && TrgObjMax>=40 && TrgObjMax<60) is40 = true;
+    // if(jet60_F && TrgObjMax>=60 && TrgObjMax<80) is60 = true;
+    // if(jet80_F && TrgObjMax>=80 && TrgObjMax<100) is80 = true;
+    // if(jet100_F && TrgObjMax>=100) is100 = true;
+    // int weight_jet40  = jet40_p_F * jet40_l1seed_p_F; 
+    // int weight_jet60  = jet60_p_F * jet60_l1seed_p_F; 
+    // int weight_jet80  = jet80_p_F * jet80_l1seed_p_F; 
+    // int weight_jet100 = jet100_p_F * jet100_l1seed_p_F;
+
+    // double weight_eS = 1.0;
+    // if(is40) weight_eS = weight_jet40;
+    // if(is60) weight_eS = weight_jet60;
+    // if(is80) weight_eS = weight_jet80;
+    // if(is100) weight_eS = weight_jet100;
+
+    // arry_TrgObj.clear();
+
+    
+    bool trgDec[4] = {(bool)jet40_F, (bool)jet60_F, (bool)jet80_F, (bool)jet100_F};
+    int treePrescl[4] = {(jet40_p_F*jet40_l1seed_p_F), (jet60_p_F*jet60_l1seed_p_F), (jet80_p_F*jet80_l1seed_p_F), (jet100_p_F*jet100_l1seed_p_F)};
+    
+    int maxtrg= -1;
+    for(int ii=4; ii>=0; ii--){
+      if(trgDec[ii]==1){
+	maxtrg=ii;
+	break;
       }
     }
+    
+    double triggerPt=0.;
+    if(jet40_F){
+      for(unsigned int itt=0; itt<trgObjpt_40->size(); itt++){
+	if(trgObjpt_40->at(itt)>triggerPt) triggerPt = trgObjpt_40->at(itt);
+      }
+    }
+    if(jet60_F){
+      for(unsigned int itt=0; itt<trgObjpt_60->size(); itt++){
+	if(trgObjpt_60->at(itt)>triggerPt) triggerPt = trgObjpt_60->at(itt);
+      }
+    }
+    if(jet80_F){
+      for(unsigned int itt=0; itt<trgObjpt_80->size(); itt++){
+	if(trgObjpt_80->at(itt)>triggerPt) triggerPt = trgObjpt_80->at(itt);
+      }
+    }
+    if(jet100_F){
+      for(unsigned int itt=0; itt<trgObjpt_100->size(); itt++){
+	if(trgObjpt_100->at(itt)>triggerPt) triggerPt = trgObjpt_100->at(itt);
+      }
+    }
+    
+    double weight_eS = trigComb(trgDec, treePrescl, triggerPt);
+    
+    if(trgDec[3] && triggerPt>=100) is100 = true;
+    if(trgDec[2] && triggerPt>=80 && triggerPt<100) is80 = true;
+    if(trgDec[1] && triggerPt>=60 && triggerPt<80) is60 = true;
+    if(trgDec[0] && triggerPt>=40 && triggerPt<60) is40 = true;
 
-    if(jet40_F && TrgObjMax>=40 && TrgObjMax<60) is40 = true;
-    if(jet60_F && TrgObjMax>=60 && TrgObjMax<80) is60 = true;
-    if(jet80_F && TrgObjMax>=80 && TrgObjMax<100) is80 = true;
-    if(jet100_F && TrgObjMax>=100) is100 = true;
-
-    arry_TrgObj.clear();
+    NEvents++;
+    if(is100) NEvents_100++;
+    if(is80) NEvents_80++;
+    if(is60) NEvents_60++;
+    if(is40) NEvents_40++;
+    
 
     for(int jet = 0; jet<nref_F; ++jet){
 
@@ -424,16 +520,12 @@ void RAA_read_data_pp(int startfile = 0,
       
       float recpt = pt_F[jet];
       float rawpt = rawpt_F[jet];
-      if(recpt<=30) continue;
+      if(recpt<=15) continue;
       
       // float JEC_upShift   = (float)recpt;
       // float JEC_downShift = (float)recpt;
-      // float JEC_gaussmear = (float)recpt;      
+      // float JEC_gaussmear = (float)recpt;
 
-      if(is40) hpp_TrgObj40->Fill(recpt, jet40_p_F);
-      if(is60) hpp_TrgObj60->Fill(recpt, jet60_p_F);
-      if(is80) hpp_TrgObj80->Fill(recpt, jet80_p_F);
-      if(is100) hpp_TrgObj100->Fill(recpt, jet100_p_F);
       
       // if(jet40_F == 1 && jet60_F==0 && jet80_F==0) {
       // 	hpp_TrgObj40->Fill(recpt, jet40_p_F);
@@ -476,12 +568,23 @@ void RAA_read_data_pp(int startfile = 0,
 	hJetQA[0][17]->Fill(muMax_F[jet]/recpt, weight_eS);
 	hJetQA[0][18]->Fill(muSum_F[jet]/recpt, weight_eS);
 
+	hpp_CombJetpT[0]->Fill(recpt, weight_eS);
+	
+	if(is40) hpp_TrgObj40[0]->Fill(recpt, treePrescl[0]);
+	if(is60) hpp_TrgObj60[0]->Fill(recpt, treePrescl[1]);
+	if(is80) hpp_TrgObj80[0]->Fill(recpt, treePrescl[2]);
+	if(is100) hpp_TrgObj100[0]->Fill(recpt, treePrescl[3]);
 	// apply JetID
 	// charged hadron fraction > 0
 	// charged hadron multiplicity > 0
-	// charged EM fraction < 0.99 
+	// charged EM fraction < 0.99
 	
-	if(chSum_F[jet]/recpt<0.99 && chSum_F[jet]/recpt>0 && neSum_F[jet]/recpt<0.99 && chN_F[jet]>0 && eSum_F[jet]/recpt<0.99){
+	if(jet == 0){
+	  hJetQA[0][19]->Fill((float)(pt_F[0]-pt_F[1])/(pt_F[0]+pt_F[1]), weight_eS);
+	  hJetQA[0][20]->Fill((float)(pt_F[1]/pt_F[0]), weight_eS);
+	}
+	
+	if( chSum_F[jet]/recpt>0 && neSum_F[jet]/recpt<0.99 && chN_F[jet]>0 && phSum_F[jet]/recpt<0.99){
 	  hJetQA[1][0]->Fill(recpt, weight_eS);
 	  hJetQA[1][1]->Fill(rawpt_F[jet], weight_eS);
 	  hJetQA[1][2]->Fill(eta_F[jet], weight_eS);
@@ -501,8 +604,20 @@ void RAA_read_data_pp(int startfile = 0,
 	  hJetQA[1][16]->Fill(eSum_F[jet]/recpt, weight_eS);
 	  hJetQA[1][17]->Fill(muMax_F[jet]/recpt, weight_eS);
 	  hJetQA[1][18]->Fill(muSum_F[jet]/recpt, weight_eS);
+
+	  hpp_CombJetpT[1]->Fill(recpt, weight_eS);
+	  
+	  if(is40) hpp_TrgObj40[1]->Fill(recpt, treePrescl[0]);
+	  if(is60) hpp_TrgObj60[1]->Fill(recpt, treePrescl[1]);
+	  if(is80) hpp_TrgObj80[1]->Fill(recpt, treePrescl[2]);
+	  if(is100) hpp_TrgObj100[1]->Fill(recpt, treePrescl[3]);
+	  
+	  if(jet == 0){
+	    hJetQA[1][19]->Fill((float)(pt_F[0]-pt_F[1])/(pt_F[0]+pt_F[1]), weight_eS);
+	    hJetQA[1][20]->Fill((float)(pt_F[1]/pt_F[0]), weight_eS);
+	  }  
 	}
-	
+		
       }
       // if(jet80_F == 1) {      
 
@@ -515,16 +630,24 @@ void RAA_read_data_pp(int startfile = 0,
       // }
       
     }// jet loop
-    if(printDebug)cout<<endl;
+
+
+	
+    //if(printDebug)cout<<endl;
 
   }// event loop
 
 
-  hpp_TrgObjComb->Add(hpp_TrgObj100);
-  hpp_TrgObjComb->Add(hpp_TrgObj80);
-  hpp_TrgObjComb->Add(hpp_TrgObj60);
-  hpp_TrgObjComb->Add(hpp_TrgObj40);
+  hpp_TrgObjComb[0]->Add(hpp_TrgObj100[0]);
+  hpp_TrgObjComb[0]->Add(hpp_TrgObj80[0]);
+  hpp_TrgObjComb[0]->Add(hpp_TrgObj60[0]);
+  hpp_TrgObjComb[0]->Add(hpp_TrgObj40[0]);
 
+  hpp_TrgObjComb[1]->Add(hpp_TrgObj100[1]);
+  hpp_TrgObjComb[1]->Add(hpp_TrgObj80[1]);
+  hpp_TrgObjComb[1]->Add(hpp_TrgObj60[1]);
+  hpp_TrgObjComb[1]->Add(hpp_TrgObj40[1]);
+  
   // divideBinWidth(hpp_TrgObjComb);
   // divideBinWidth(hpp_TrgObj80);
   // divideBinWidth(hpp_TrgObj60);
@@ -574,6 +697,29 @@ void RAA_read_data_pp(int startfile = 0,
   // divideBinWidth(hpp_anaBin_TrgObj80);
   // divideBinWidth(hpp_anaBin_TrgObj60);
   // divideBinWidth(hpp_anaBin_TrgObj40);
+
+  
+  hpp_TrgObj40[0]->Print("base");
+  hpp_TrgObj60[0]->Print("base");
+  hpp_TrgObj80[0]->Print("base");
+  hpp_TrgObj100[0]->Print("base");
+  hpp_TrgObjComb[0]->Print("base");
+  hpp_CombJetpT[0]->Print("base");
+  
+  hpp_TrgObj40[1]->Print("base");
+  hpp_TrgObj60[1]->Print("base");
+  hpp_TrgObj80[1]->Print("base");
+  hpp_TrgObj100[1]->Print("base");
+  hpp_TrgObjComb[1]->Print("base");
+  hpp_CombJetpT[1]->Print("base");
+  
+
+  cout<<"Event Summary"<<endl;
+  cout<<"Total Number of Events read   = "<<NEvents<<endl;
+  cout<<"Total Number of HLT100 events = "<<NEvents_100<<endl;
+  cout<<"Total Number of HLT80 events = "<<NEvents_80<<endl;
+  cout<<"Total Number of HLT60 events = "<<NEvents_60<<endl;
+  cout<<"Total Number of HLT40 events = "<<NEvents_40<<endl;
   
   fout->Write();
 

@@ -68,6 +68,7 @@ TLorentzVector findMissEt(int nPFpart, int* pfId, float* pfPt, float* pfEta, flo
 void deriveDijetResponse(int startfile=0,
 			 int endfile=1,
 			 int isMC=1,
+			 int radius = 4,
 			 std::string out="test.root")
 {
   
@@ -159,7 +160,7 @@ void deriveDijetResponse(int startfile=0,
     instr_Forest>>filename_Forest;
     cout << "opening file " << filename_Forest << endl;
     TFile *fin = TFile::Open(filename_Forest.c_str());
-    TTree *jtTree = (TTree*)fin->Get("ak3PFJetAnalyzer/t");
+    TTree *jtTree = (TTree*)fin->Get(Form("ak%dPFJetAnalyzer/t",radius));
     TTree *pfTree = (TTree*)fin->Get("pfcandAnalyzer/pfTree");
     TTree *phoTree = (TTree*)fin->Get("ggHiNtuplizer/EventTree");
 
