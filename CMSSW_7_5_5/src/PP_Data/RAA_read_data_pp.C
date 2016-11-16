@@ -307,9 +307,9 @@ void RAA_read_data_pp(int startfile = 0,
   // Add the Jet ID plots:
   // list of variables:
   std::string var[21] = {"jtpt" ,"rawpt", "jteta", "jtphi", "trkMax", "trkSum", "trkHardSum", "chMax", "chSum", "chHardSum","phMax", "phSum", "phHardSum", "neMax", "neSum", "eMax", "eSum", "muMax", "muSum","Aj","xj"};
-  TH1F * hJetQA[2][21];
+  TH1F * hJetQA[3][21];
 
-  for(int k = 0; k<2; ++k){
+  for(int k = 0; k<3; ++k){
     for(int j = 0; j<21; ++j){
       if(j==2) hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),100, -5, +5);
       else if(j==3) hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),100, -4, +4);
@@ -392,6 +392,27 @@ void RAA_read_data_pp(int startfile = 0,
   // hpp_anaBin_TrgObj60 = new TH1F(Form("hpp_anaBin_HLT60_R%d_%s",radius,etaWidth),Form("Spectra from  Jet 60 && !jet80 R%d %s ",radius,etaWidth),nbins_pt, boundaries_pt);
   // hpp_anaBin_TrgObj40 = new TH1F(Form("hpp_anaBin_HLT40_R%d_%s",radius,etaWidth),Form("Spectra from Jet 40 && !jet60 && !jet80 R%d %s ",radius,etaWidth),nbins_pt, boundaries_pt);
   // hpp_anaBin_TrgObjComb = new TH1F(Form("hpp_anaBin_HLTComb_R%d_%s",radius,etaWidth),Form("Trig Combined Spectra R%d %s ",radius,etaWidth),nbins_pt, boundaries_pt);
+
+  int fileno;
+  float jetpt, rawpt, phMax, phSum, chMax, chSum, neMax, neSum, muMax, muSum, eMax, eSum;
+
+  TTree* JetID = new TTree("JetID","Ntuple containing important information about PF jets");
+  JetID->Branch("file",&fileno,"fileno/I");
+  JetID->Branch("run",&run_F,"run/I");
+  JetID->Branch("evt",&evt_F,"evt/I");
+  JetID->Branch("lumi",&lumi_F,"lumi/I");
+  JetID->Branch("jetpt",&jetpt,"jetpt/F");
+  JetID->Branch("rawpt",&rawpt,"rawpt/F");
+  JetID->Branch("phMax",&phMax,"phSum/F");
+  JetID->Branch("phSum",&phSum,"phSum/F");
+  JetID->Branch("chMax",&chMax,"chMax/F");
+  JetID->Branch("chSum",&chSum,"chSum/F");
+  JetID->Branch("neMax",&neMax,"neMax/F");
+  JetID->Branch("neSum",&neSum,"neSum/F");
+  JetID->Branch("muMax",&muMax,"muMax/F");
+  JetID->Branch("muSum",&muSum,"muSum/F");
+  JetID->Branch("eMax",&eMax,"eMax/F");
+  JetID->Branch("eSum",&eSum,"eSum/F");
 
   // now start the event loop for each file. 
   
@@ -513,7 +534,6 @@ void RAA_read_data_pp(int startfile = 0,
     if(is60) NEvents_60++;
     if(is40) NEvents_40++;
     
-
     for(int jet = 0; jet<nref_F; ++jet){
 
       if(fabs(eta_F[jet]) > 2) continue;
@@ -584,7 +604,7 @@ void RAA_read_data_pp(int startfile = 0,
 	  hJetQA[0][20]->Fill((float)(pt_F[1]/pt_F[0]), weight_eS);
 	}
 	
-	if( chSum_F[jet]/recpt>0 && neSum_F[jet]/recpt<0.99 && chN_F[jet]>0 && phSum_F[jet]/recpt<0.99){
+	if(chSum_F[jet]/recpt>0.01 && neSum_F[jet]/recpt>0.01 && neSum_F[jet]/recpt<0.99 && chN_F[jet]>0){
 	  hJetQA[1][0]->Fill(recpt, weight_eS);
 	  hJetQA[1][1]->Fill(rawpt_F[jet], weight_eS);
 	  hJetQA[1][2]->Fill(eta_F[jet], weight_eS);
@@ -617,8 +637,28 @@ void RAA_read_data_pp(int startfile = 0,
 	    hJetQA[1][20]->Fill((float)(pt_F[1]/pt_F[0]), weight_eS);
 	  }  
 	}
+
 		
       }
+
+      if((is40 && recpt>90) || (is60 && recpt>100) || (is80 && recpt>120)){
+	fileno = endfile;
+	jetpt = recpt;
+	rawpt = rawpt_F[jet];
+	phMax = phMax_F[jet];
+	neMax = neMax_F[jet];
+	chMax = chMax_F[jet];
+	muMax = muMax_F[jet];
+	eMax = eMax_F[jet];
+	phSum = phSum_F[jet];
+	neSum = neSum_F[jet];
+	chSum = chSum_F[jet];
+	muSum = muSum_F[jet];
+	eSum = eSum_F[jet];
+	JetID->Fill();
+      }
+    
+      
       // if(jet80_F == 1) {      
 
       // 	hpp_TrgObj80->Fill(recpt);

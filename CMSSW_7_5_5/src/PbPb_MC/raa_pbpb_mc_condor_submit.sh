@@ -6,7 +6,7 @@ counter=0
 incrementer=1
 
 destination=/mnt/hadoop/cms/store/user/rkunnawa/rootfiles/JetRAA/June29/
-filelist=jetRAA_PbPb_mc_forests.txt
+filelist=jetRAA_PbPb_mc_forests_v2.txt
 
 nFiles=`wc -l < $filelist`
 tardir=`pwd`

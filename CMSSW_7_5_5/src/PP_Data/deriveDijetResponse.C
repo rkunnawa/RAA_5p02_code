@@ -110,7 +110,7 @@ void deriveDijetResponse(int startfile = 0,
     for(int j=0; j<nbins_eta; j++){
       avgAHisto[i][j] = new TH1F(Form("avgAHisto_pt%d_eta%d",i,j),"",50,-1,1);
       avgBHisto[i][j] = new TH1F(Form("avgBHisto_pt%d_eta%d",i,j),"",50,-1,1);
-      hAvgAbsPhoResponse[i][j] = new TH1F(Form("hAvgAbsPhoResponse_pt%d_eta%d",i,j),"",50,-1,1);
+      hAvgAbsPhoResponse[i][j] = new TH1F(Form("hAvgAbsPhoResponse_pt%d_eta%d",i,j),"",75,-1,2);
     }
   }
 
@@ -135,12 +135,12 @@ void deriveDijetResponse(int startfile = 0,
       nEntriesB[i][j]=0;
       avgAbsPhoResponse[i][j]=0;
       nEntriesAbs[i][j]=0;
-      h_avgA[i][j]=new TH1D(Form("h_avgA_%d_%d",i,j),"",2, 0, 2);;
-      h_nEntries[i][j]=new TH1D(Form("h_nEntries_%d_%d",i,j),"",2, 0, 2);;
-      h_avgB[i][j]=new TH1D(Form("h_avgB_%d_%d",i,j),"",2, 0, 2);;
-      h_nEntriesB[i][j]=new TH1D(Form("h_nEntriesB_%d_%d",i,j),"",2, 0, 2);;
-      h_avgAbsPhoResponse[i][j]=new TH1D(Form("h_avgAbsPhoResponse_%d_%d",i,j),"",2, 0, 2);;
-      h_nEntriesAbs[i][j]=new TH1D(Form("h_nEntriesAbs_%d_%d",i,j),"",2, 0, 2);;      
+      h_avgA[i][j]=new TH1D(Form("h_avgA_%d_%d",i,j),"",200, -2, 2);;
+      h_nEntries[i][j]=new TH1D(Form("h_nEntries_%d_%d",i,j),"",200, -2, 2);;
+      h_avgB[i][j]=new TH1D(Form("h_avgB_%d_%d",i,j),"",200, -2, 2);;
+      h_nEntriesB[i][j]=new TH1D(Form("h_nEntriesB_%d_%d",i,j),"",200, -2, 2);;
+      h_avgAbsPhoResponse[i][j]=new TH1D(Form("h_avgAbsPhoResponse_%d_%d",i,j),"",200, -2, 2);;
+      h_nEntriesAbs[i][j]=new TH1D(Form("h_nEntriesAbs_%d_%d",i,j),"",200, -2, 2);;      
     }
   }
   

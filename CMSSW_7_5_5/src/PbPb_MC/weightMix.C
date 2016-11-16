@@ -85,7 +85,7 @@ void weightMix(){
   //nt->AddFriend(evt);
 
   std::string infile_Forest;
-  infile_Forest = "jetRAA_PbPb_mc_forests.txt";
+  infile_Forest = "jetRAA_PbPb_mc_forests_v2.txt";
   std::ifstream instr_Forest(infile_Forest.c_str(),std::ifstream::in);
   std::string filename_Forest;
   std::string filename_array[Nfiles];

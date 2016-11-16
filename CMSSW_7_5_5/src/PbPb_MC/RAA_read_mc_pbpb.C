@@ -195,9 +195,8 @@ void RAA_read_mc_pbpb(int startfile = 0,
 
   std::string infile_Forest;
 
-  //infile_Forest = "jetRAA_PbPb_mc_forests.txt";
+  infile_Forest = "jetRAA_PbPb_mc_forests_v2.txt";
   //infile_Forest = "pthat30_Vstest.txt";
-  infile_Forest = "pthat80_Vstest.txt";
   std::ifstream instr_Forest(infile_Forest.c_str(),std::ifstream::in);
   std::string filename_Forest;
   
@@ -1191,7 +1190,6 @@ void RAA_read_mc_pbpb(int startfile = 0,
       if(ptbin != -1){;
 	hJER[ptbin][cBin]->Fill((float)recpt/genpt);
       }
-      // if( isPFElecCut_eS[jet] != PFElecCut) cout<<"HUGE PROBLEM WITH ELECTRON CUT"<<endl;
       
       //if(genpt < 0) continue;
       

@@ -41,6 +41,11 @@
 #include "TMath.h"
 #include "TLine.h"
 
+#include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
+#include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h" 
+
+
 // static const int nbins_pt = 39;
 // static const double boundaries_pt[nbins_pt+1] = {
 //   3, 4, 5, 7, 9, 12, 
@@ -54,25 +59,28 @@
 //   638, 686, 1000 
 // };
 
-const int ptbins[] = {15, 30, 50, 80, 120, 170, 220, 300, 500};
-const int nbins_pt = sizeof(ptbins)/sizeof(int) -1;
+double ptbins[] = {43.,   49.,   56.,   64.,   74.,   84.,   97.,  114.,  133.,  153.,  174.,  196.,  220.,  245.,  272.,  300.,  330.,  362.,  395.,  430.,  468.,  507.,  548.,  592.,  638.,  686., 1000.};
+const int nbins_pt = sizeof(ptbins)/sizeof(double)-1;
 
-const double ptbins_jec[] = {17, 22, 27, 33, 39, 47, 55, 64, 74, 84, 97, 114, 133, 153, 174, 196, 220, 245, 272, 300, 350, 400, 550, 790, 1000};
-const int nbins_pt_jec = sizeof(ptbins_jec)/sizeof(double) -1;
+// const double ptbins_jec[] = {17, 22, 27, 33, 39, 47, 55, 64, 74, 84, 97, 114, 133, 153, 174, 196, 220, 245, 272, 300, 350, 400, 550, 790, 1000};
+// const int nbins_pt_jec = sizeof(ptbins_jec)/sizeof(double) -1;
 
-const double etabins[] = {-5.191, -4.889, -4.716, -4.538, -4.363, -4.191, -4.013, -3.839, -3.664, 
-            -3.489, -3.314, -3.139, -2.964, -2.853, -2.650, -2.500, -2.322, -2.172, 
-            -2.043, -1.930, -1.830, -1.740, -1.653, -1.566, -1.479, -1.392, -1.305, 
-            -1.218, -1.131, -1.044, -0.957, -0.879, -0.783, -0.696, -0.609, -0.522, 
-            -0.435, -0.348, -0.261, -0.174, -0.087, 
-            +0.000, 
-            +0.087, +0.174, +0.261, +0.348, +0.435, +0.522, +0.609, +0.696, +0.783, 
-            +0.879, +0.957, +1.044, +1.131, +1.218, +1.305, +1.392, +1.479, +1.566, 
-            +1.653, +1.740, +1.830, +1.930, +2.043, +2.172, +2.322, +2.500, +2.650, 
-            +2.853, +2.964, +3.139, +3.314, +3.489, +3.664, +3.839, +4.013, +4.191, 
-            +4.363, +4.538, +4.716, +4.889, +5.191
-};
-const int nbins_eta = sizeof(etabins)/sizeof(double) -1;
+// const double etabins_jec[] = {-5.191, -4.889, -4.716, -4.538, -4.363, -4.191, -4.013, -3.839, -3.664, 
+//             -3.489, -3.314, -3.139, -2.964, -2.853, -2.650, -2.500, -2.322, -2.172, 
+//             -2.043, -1.930, -1.830, -1.740, -1.653, -1.566, -1.479, -1.392, -1.305, 
+//             -1.218, -1.131, -1.044, -0.957, -0.879, -0.783, -0.696, -0.609, -0.522, 
+//             -0.435, -0.348, -0.261, -0.174, -0.087, 
+//             +0.000, 
+//             +0.087, +0.174, +0.261, +0.348, +0.435, +0.522, +0.609, +0.696, +0.783, 
+//             +0.879, +0.957, +1.044, +1.131, +1.218, +1.305, +1.392, +1.479, +1.566, 
+//             +1.653, +1.740, +1.830, +1.930, +2.043, +2.172, +2.322, +2.500, +2.650, 
+//             +2.853, +2.964, +3.139, +3.314, +3.489, +3.664, +3.839, +4.013, +4.191, 
+//             +4.363, +4.538, +4.716, +4.889, +5.191
+// };
+// const int nbins_eta_jec = sizeof(etabins_jec)/sizeof(double) -1;
+
+double etabins[] = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.2, 4.7};
+const int nbins_eta = sizeof(etabins)/sizeof(double)-1; 
 
 static const int trigValue = 5;
 static const char trigName [trigValue][256] = {"HLT40","HLT60","HLT80","HLT100","Combined"};
@@ -107,12 +115,12 @@ float deltaphi(float phi1, float phi2)
 
 using namespace std;
 
-void RAA_read_mc_pp(int startfile = 0,
-		    int endfile = 8,
+void RAA_read_mc_pp(int startfile = 2,
+		    int endfile = 3,
 		    int radius = 4,
 		    std::string algo="",
 		    std::string jetType= "PF",
-		    std::string kFoname="test_output.root"){
+		    std::string kFoname="ppJECCheck.root"){
   
   TStopwatch timer;
   timer.Start();
@@ -202,6 +210,7 @@ void RAA_read_mc_pp(int startfile = 0,
   float phi_F[1000];
   float chMax_F[1000];
   int chN_F[1000];
+  int neN_F[1000];
   float trkMax_F[1000];
   float chSum_F[1000];
   float phSum_F[1000];
@@ -275,6 +284,7 @@ void RAA_read_mc_pp(int startfile = 0,
   jetpp[2]->SetBranchAddress("chargedMax",&chMax_F);
   jetpp[2]->SetBranchAddress("chargedSum",&chSum_F);
   jetpp[2]->SetBranchAddress("chargedN",&chN_F);
+  jetpp[2]->SetBranchAddress("neutralN",&neN_F);
   //jetpp[2]->SetBranchAddress("chargedHardMax",&chMax_F);
   jetpp[2]->SetBranchAddress("chargedHardSum",&chSum_F);
   jetpp[2]->SetBranchAddress("trackMax",&trkMax_F);
@@ -329,11 +339,11 @@ void RAA_read_mc_pp(int startfile = 0,
   // TH1F *hpp_anaBin_JetComb_gen,*hpp_anaBin_JetComb_reco;
   
   TH1F *hpp_gen,*hpp_reco;
-  TH2F *hpp_matrix;
-  TH2F *hpp_mcclosure_matrix;
-  TH1F *hpp_mcclosure_data;
-  TH1F *hpp_mcclosure_gen;
-
+  // TH2F *hpp_matrix;
+  // TH2F *hpp_mcclosure_matrix;
+  // TH1F *hpp_mcclosure_data;
+  // TH1F *hpp_mcclosure_gen;
+  
   // TH2F *hpp_matrix_HLT;
   // TH2F *hpp_Trans_matrix_HLT;
   // TH2F *hpp_anaBin_matrix_HLT;
@@ -382,7 +392,7 @@ void RAA_read_mc_pp(int startfile = 0,
   
   //TH2F *hpp_response;
   // TH1F *hpp_mcclosure_JetComb_data;
-  TH1F *hpp_mcclosure_data_train;
+  // TH1F *hpp_mcclosure_data_train;
   // TH1F *hpp_mcclosure_JetComb_data_train;
   // TH1F *hpp_mcclosure_Jet80_data_train;
   // TH1F *hpp_mcclosure_Jet60_data_train;
@@ -496,7 +506,7 @@ void RAA_read_mc_pp(int startfile = 0,
   //cout<<"A"<<endl;
   hpp_reco = new TH1F(Form("hpp_reco_R%d_%s",radius,etaWidth),Form("Reco jtpt R%d %s ",radius,etaWidth),1000,0,1000);
   //cout<<"B"<<endl;
-  hpp_matrix = new TH2F(Form("hpp_matrix_R%d_%s",radius,etaWidth),Form("Matrix refpt jtpt R%d %s ; reco pT; gen pT",radius,etaWidth),1000,0,1000,1000,0,1000);
+  // hpp_matrix = new TH2F(Form("hpp_matrix_R%d_%s",radius,etaWidth),Form("Matrix refpt jtpt R%d %s ; reco pT; gen pT",radius,etaWidth),1000,0,1000,1000,0,1000);
 
   // hpp_matrix_HLT = new TH2F(Form("hpp_matrix_HLT_R%d_%s",radius,etaWidth),Form("Matrix refpt jtpt from trigger addition R%d %s ",radius,etaWidth),1000,0,1000,1000,0,1000);
   // hpp_anaBin_matrix_HLT = new TH2F(Form("hpp_anaBin_matrix_HLT_R%d_%s",radius,etaWidth),Form("Matrix refpt jtpt from trigger addition R%d %s ",radius,etaWidth),nbins_pt, boundaries_pt,nbins_pt, boundaries_pt);
@@ -557,15 +567,15 @@ void RAA_read_mc_pp(int startfile = 0,
   // hpp_mcclosure_Trans_matrix_HLT_Jet80 = new TH2F(Form("hpp_mcclosure_Trans_matrix_HLT_Jet80_R%d_%s",radius,etaWidth),Form("Trans Matrix for mcclosure refpt jtpt from Jet triggers R%d %s ",radius,etaWidth),1000, 0, 1000,1000, 0, 1000);
 
 
-  hpp_mcclosure_matrix = new TH2F(Form("hpp_mcclosure_matrix_R%d_%s",radius,etaWidth),Form("Matrix for mcclosure refpt jtpt R%d %s;reco pT; gen pT ",radius,etaWidth),1000, 0, 1000,1000, 0, 1000);
-  hpp_mcclosure_data = new TH1F(Form("hpp_mcclosure_data_R%d_%s",radius,etaWidth),Form("data for unfolding mc closure test R%d %s ",radius,etaWidth),1000, 0, 1000);
-  hpp_mcclosure_gen = new TH1F(Form("hpp_mcclosure_gen_R%d_%s",radius,etaWidth),Form("gen spectra for unfolding mc closure test R%d %s ",radius,etaWidth),1000, 0, 1000);
+  // hpp_mcclosure_matrix = new TH2F(Form("hpp_mcclosure_matrix_R%d_%s",radius,etaWidth),Form("Matrix for mcclosure refpt jtpt R%d %s;reco pT; gen pT ",radius,etaWidth),1000, 0, 1000,1000, 0, 1000);
+  // hpp_mcclosure_data = new TH1F(Form("hpp_mcclosure_data_R%d_%s",radius,etaWidth),Form("data for unfolding mc closure test R%d %s ",radius,etaWidth),1000, 0, 1000);
+  // hpp_mcclosure_gen = new TH1F(Form("hpp_mcclosure_gen_R%d_%s",radius,etaWidth),Form("gen spectra for unfolding mc closure test R%d %s ",radius,etaWidth),1000, 0, 1000);
 
   // hpp_mcclosure_JetComb_data = new TH1F(Form("hpp_mcclosure_JetComb_data_R%d_%s",radius,etaWidth),Form("data for unfolding mc closure test trigger combined  R%d %s ",radius,etaWidth),1000, 0, 1000);
   // hpp_mcclosure_Jet80_data = new TH1F(Form("hpp_mcclosure_Jet80_data_R%d_%s",radius,etaWidth),Form("data for unfolding mc closure test trigger 80  R%d %s ",radius,etaWidth),1000, 0, 1000);
   // hpp_mcclosure_Jet60_data = new TH1F(Form("hpp_mcclosure_Jet60_data_R%d_%s",radius,etaWidth),Form("data for unfolding mc closure test trigger 60  R%d %s ",radius,etaWidth),1000, 0, 1000);
   // hpp_mcclosure_Jet40_data = new TH1F(Form("hpp_mcclosure_Jet40_data_R%d_%s",radius,etaWidth),Form("data for unfolding mc closure test trigger 40  R%d %s ",radius,etaWidth),1000, 0, 1000);
-  hpp_mcclosure_data_train = new TH1F(Form("hpp_mcclosure_data_train_R%d_%s",radius,etaWidth),Form("data_train for unfolding mc closure test R%d %s ",radius,etaWidth),1000, 0, 1000);
+  // hpp_mcclosure_data_train = new TH1F(Form("hpp_mcclosure_data_train_R%d_%s",radius,etaWidth),Form("data_train for unfolding mc closure test R%d %s ",radius,etaWidth),1000, 0, 1000);
   // hpp_mcclosure_JetComb_data_train = new TH1F(Form("hpp_mcclosure_JetComb_data_train_R%d_%s",radius,etaWidth),Form("data_train for unfolding mc closure test trigger combined  R%d %s ",radius,etaWidth),1000, 0, 1000);
   // hpp_mcclosure_Jet80_data_train = new TH1F(Form("hpp_mcclosure_Jet80_data_train_R%d_%s",radius,etaWidth),Form("data_train for unfolding mc closure test trigger 80  R%d %s ",radius,etaWidth),1000, 0, 1000);
   // hpp_mcclosure_Jet60_data_train = new TH1F(Form("hpp_mcclosure_Jet60_data_train_R%d_%s",radius,etaWidth),Form("data_train for unfolding mc closure test trigger 60  R%d %s ",radius,etaWidth),1000, 0, 1000);
@@ -576,42 +586,44 @@ void RAA_read_mc_pp(int startfile = 0,
   // hpp_mcclosure_Jet40_gen = new TH1F(Form("hpp_mcclosure_gen_Jet40_R%d_%s",radius,etaWidth),Form("gen spectra for unfolding mc closure test trigger 40 R%d %s ",radius,etaWidth),1000, 0, 1000);
 
 
-  TH3F * hJEC= new TH3F("hJEC",";raw p_{T};#eta;JEC",500, 0, 500, 200, -5, +5, 300, 0, 5);
-  TH1F * hJER[nbins_pt];
-  TH1F * hJER_eta_30pt50[nbins_eta];
-  TH1F * hJER_eta_150pt200[nbins_eta];
-  TH1F * hJEC_check[nbins_pt_jec][nbins_eta];
+  // TH3F * hJEC= new TH3F("hJEC",";raw p_{T};#eta;JEC",500, 0, 500, 200, -5, +5, 300, 0, 5);
+  // TH1F * hJER[nbins_pt];
+  // TH1F * hJER_eta_30pt50[nbins_eta];
+  // TH1F * hJER_eta_150pt200[nbins_eta];
+  TH1F * hJEC_ppJEC[nbins_pt][nbins_eta];
+  TH1F * hJEC_hinJEC[nbins_pt][nbins_eta];
 
-  for(int x = 0; x<nbins_pt_jec; ++x){
+  for(int x = 0; x<nbins_pt; ++x){
     for(int y = 0; y<nbins_eta; ++y){
-      hJEC_check[x][y] = new TH1F(Form("hJEC_check_ptbin%d_etabin%d",x,y),Form("rawpt/genpt %2.0f < genpt < %2.0f, %2.4f < geneta < %2.4f",ptbins_jec[x], ptbins_jec[x+1], etabins[y], etabins[y+1]),100, 0, 3);
+      hJEC_ppJEC[x][y] = new TH1F(Form("hJEC_ppJEC_ptbin%d_etabin%d",x,y),Form("recopt-genpt/genpt %2.0f < genpt < %2.0f, %2.4f < geneta < %2.4f",ptbins[x], ptbins[x+1], etabins[y], etabins[y+1]),300, 0, 3);
+      hJEC_hinJEC[x][y] = new TH1F(Form("hJEC_hinJEC_ptbin%d_etabin%d",x,y),Form("recopt-genpt/genpt %2.0f < genpt < %2.0f, %2.4f < geneta < %2.4f",ptbins[x], ptbins[x+1], etabins[y], etabins[y+1]),300, 0, 3);
     }
   }
   
   TH1F * hVz = new TH1F("hVz","",200, -20, 20);
   
-  for(int bin = 0; bin<nbins_pt; ++bin){
-    hJER[bin] = new TH1F(Form("hJER_%d_pt_%d", ptbins[bin], ptbins[bin+1]),"",100, 0, 2);
-  }
+  // for(int bin = 0; bin<nbins_pt; ++bin){
+  //   hJER[bin] = new TH1F(Form("hJER_%d_pt_%d", ptbins[bin], ptbins[bin+1]),"",100, -2, 2);
+  // }
 
-  for(int bin = 0; bin<nbins_eta; ++bin){
-    hJER_eta_30pt50[bin] = new TH1F(Form("hJER_etabin%d_30_pt_50", bin),Form("rawpt/genpt 30 < genpt < 50, %2.4f < geneta < %2.4f", etabins[bin], etabins[bin+1]),100, 0, 2);
-    hJER_eta_150pt200[bin] = new TH1F(Form("hJER_etabin%d_150_pt_200", bin),Form("rawpt/genpt 150 < genpt < 200, %2.4f < geneta < %2.4f", etabins[bin], etabins[bin+1]),100, 0, 2);
-  }
+  // for(int bin = 0; bin<nbins_eta; ++bin){
+  //   hJER_eta_30pt50[bin] = new TH1F(Form("hJER_etabin%d_30_pt_50", bin),Form("rawpt/genpt 30 < genpt < 50, %2.4f < geneta < %2.4f", etabins[bin], etabins[bin+1]),200, -2, 2);
+  //   hJER_eta_150pt200[bin] = new TH1F(Form("hJER_etabin%d_150_pt_200", bin),Form("rawpt/genpt 150 < genpt < 200, %2.4f < geneta < %2.4f", etabins[bin], etabins[bin+1]),200, -2, 2);
+  // }
 
   // Add the Jet ID plots:
   // list of variables:
-  std::string var[21] = {"jtpt" ,"rawpt", "jteta", "jtphi", "trkMax", "trkSum", "trkHardSum", "chMax", "chSum", "chHardSum","phMax", "phSum", "phHardSum", "neMax", "neSum", "eMax", "eSum", "muMax", "muSum" ,"Aj","xj"};
-  TH1F * hJetQA[2][21];
+  // std::string var[21] = {"jtpt" ,"rawpt", "jteta", "jtphi", "trkMax", "trkSum", "trkHardSum", "chMax", "chSum", "chHardSum","phMax", "phSum", "phHardSum", "neMax", "neSum", "eMax", "eSum", "muMax", "muSum" ,"Aj","xj"};
+  // TH1F * hJetQA[3][21];
 
-  for(int k = 0; k<2; ++k){
-    for(int j = 0; j<21; ++j){
-      if(j==2) hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),100, -5, +5);
-      else if(j==3) hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),100, -4, +4);
-      else if(j<=1)hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),500, 0, 500);
-      else if(j>=4)hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),200, 0, 2);
-    }
-  }
+  // for(int k = 0; k<3; ++k){
+  //   for(int j = 0; j<21; ++j){
+  //     if(j==2) hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),100, -5, +5);
+  //     else if(j==3) hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),100, -4, +4);
+  //     else if(j<=1)hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),500, 0, 500);
+  //     else if(j>=4)hJetQA[k][j] = new TH1F(Form("hJetQA_%dwJetID_%s",k,var[j].c_str()),Form(";%s;",var[j].c_str()),200, 0, 2);
+  //   }
+  // }
   // double RMS = 0.22;
   
   // TH1F * hpp_DijetSignalSelection_LeadPFJet_gt_A = new TH1F("hpp_DijetSignalSelection_LeadPFJet_gt_A","",1000, 0, 1000);
@@ -631,7 +643,8 @@ void RAA_read_mc_pp(int startfile = 0,
   //fVzPP->SetParameters(1.05602e00,5.74688e-03,-3.37288e-03,-1.44764e-05,8.59060e-07);
   // anna's weights
   fVzPP->SetParameters(+0.941, -0.0173, +3.23e-3, +3.61e-6, -1.04e-5);
-  
+
+  nentries = 100000;
   for(int nEvt = 0; nEvt < nentries; ++ nEvt) {
 
     if(nEvt%10000 == 0)cout<<nEvt<<"/"<<nentries<<endl;
@@ -661,7 +674,7 @@ void RAA_read_mc_pp(int startfile = 0,
 
     hpthat->Fill(pthat_F, weight_eS);
 
-    hVz->Fill(vz_F[0], weight_eS);
+    // hVz->Fill(vz_F[0], weight_eS);
     //cout<<"after filling vz"<<endl;
     
     // std::vector <float> pt;
@@ -670,103 +683,71 @@ void RAA_read_mc_pp(int startfile = 0,
     
     for(int jet = 0; jet<nref_F; ++jet){
 
-      if(fabs(eta_F[jet]) > 2) continue;
+      // if(fabs(eta_F[jet]) > 2) continue;
       if(subid_F[jet] != 0) continue;
       if(pt_F[jet] > 3 * pthat_F) continue;
-      if(refdrjt_F[jet] > 0.3) continue; 
+      if(refdrjt_F[jet] > (float)radius/10) continue; 
 
       float genpt = refpt_F[jet];
       float geneta = refeta_F[jet];
       float recpt = pt_F[jet];
       float rawpt = rawpt_F[jet];
 	
-      hJEC->Fill(rawpt, eta_F[jet], (float)(recpt/rawpt));
-
-      // pt.push_back(recpt);
-      // eta.push_back(eta_F[jet]);
-      // phi.push_back(phi_F[jet]);
-      int etabin = -1;
-      for(int bin = 0; bin<nbins_eta; ++bin){
-	if(geneta > etabins[bin]) etabin = bin;
-      }
-      if(etabin == -1) continue;
-      if(genpt >= 30 && genpt<50) hJER_eta_30pt50[etabin]->Fill((float)recpt/genpt, weight_eS);
-      if(genpt >= 150 && genpt<200) hJER_eta_150pt200[etabin]->Fill((float)recpt/genpt, weight_eS);
-
-      int binx = -1;
-      for(int bin = 0; bin<nbins_pt_jec; ++bin){
-	if(genpt > ptbins_jec[bin]) binx = bin;
-      }
-      if(binx == -1) continue;
-      hJEC_check[binx][etabin]->Fill((float)rawpt/genpt);
+      // pp jet ID
+      bool passesJetID=false;
+	if (  !( neSum_F[jet]/rawpt >= 0.99 || //neutral had //for abs(eta)<2.7
+		 phSum_F[jet]/rawpt >= 0.99 || //neutral em
+		 chSum_F[jet]/rawpt <= 0.   || //charged had //for abs(eta)<2.4 only
+		 eSum_F[jet]/rawpt  >= 0.99 || //electrons
+		 chN_F[jet]+neN_F[jet] <= 1 || //Nconstit.=NchHad+NneuHad
+		 chN_F[jet] <= 0 ) )
+	  passesJetID=true;
       
-      int ptbin = -1;
-      for(int bin = 0; bin<nbins_pt; ++bin){
-	if(genpt > ptbins[bin]) ptbin = bin;
-      }
-      if(ptbin == -1) continue;
-      hJER[ptbin]->Fill((float)recpt/genpt, weight_eS);
+      if(passesJetID) {
+	hpp_gen->Fill(genpt, weight_eS);
+	hpp_reco->Fill(recpt, weight_eS);
 
-      
-      hpp_gen->Fill(genpt, weight_eS);
-      hpp_reco->Fill(recpt, weight_eS);
-      hpp_matrix->Fill(recpt, genpt, weight_eS);
-
-      if(nEvt%2 == 0){
-	hpp_mcclosure_data->Fill(recpt, weight_eS);
-      }else {
-	hpp_mcclosure_matrix->Fill(recpt, genpt, weight_eS);
-	hpp_mcclosure_gen->Fill(genpt, weight_eS);
-	hpp_mcclosure_data_train->Fill(recpt, weight_eS);
-      }
-
-      if(recpt>30){
-	hJetQA[0][0]->Fill(recpt, weight_eS);
-	hJetQA[0][1]->Fill(rawpt_F[jet], weight_eS);
-	hJetQA[0][2]->Fill(eta_F[jet], weight_eS);
-	hJetQA[0][3]->Fill(phi_F[jet], weight_eS);
-	hJetQA[0][4]->Fill(trkMax_F[jet]/recpt, weight_eS);
-	hJetQA[0][5]->Fill(trkSum_F[jet]/recpt, weight_eS);
-	hJetQA[0][6]->Fill(trkHardSum_F[jet]/recpt, weight_eS);
-	hJetQA[0][7]->Fill(chMax_F[jet]/recpt, weight_eS);
-	hJetQA[0][8]->Fill(chSum_F[jet]/recpt, weight_eS);
-	hJetQA[0][9]->Fill(chHardSum_F[jet]/recpt, weight_eS);
-	hJetQA[0][10]->Fill(phMax_F[jet]/recpt, weight_eS);
-	hJetQA[0][11]->Fill(phSum_F[jet]/recpt, weight_eS);
-	hJetQA[0][12]->Fill(phHardSum_F[jet]/recpt, weight_eS);
-	hJetQA[0][13]->Fill(neMax_F[jet]/recpt, weight_eS);
-	hJetQA[0][14]->Fill(neSum_F[jet]/recpt, weight_eS);
-	hJetQA[0][15]->Fill(eMax_F[jet]/recpt, weight_eS);
-	hJetQA[0][16]->Fill(eSum_F[jet]/recpt, weight_eS);
-	hJetQA[0][17]->Fill(muMax_F[jet]/recpt, weight_eS);
-	hJetQA[0][18]->Fill(muSum_F[jet]/recpt, weight_eS);
-
-	// apply JetID
-	// charged hadron fraction > 0
-	// charged hadron multiplicity > 0
-	// charged EM fraction < 0.99 
-	
-	if(chSum_F[jet]/recpt>0 && neSum_F[jet]/recpt<0.99 && chN_F[jet]>0 && phSum_F[jet]/recpt<0.99){
-	  hJetQA[1][0]->Fill(recpt, weight_eS);
-	  hJetQA[1][1]->Fill(rawpt_F[jet], weight_eS);
-	  hJetQA[1][2]->Fill(eta_F[jet], weight_eS);
-	  hJetQA[1][3]->Fill(phi_F[jet], weight_eS);
-	  hJetQA[1][4]->Fill(trkMax_F[jet]/recpt, weight_eS);
-	  hJetQA[1][5]->Fill(trkSum_F[jet]/recpt, weight_eS);
-	  hJetQA[1][6]->Fill(trkHardSum_F[jet]/recpt, weight_eS);
-	  hJetQA[1][7]->Fill(chMax_F[jet]/recpt, weight_eS);
-	  hJetQA[1][8]->Fill(chSum_F[jet]/recpt, weight_eS);
-	  hJetQA[1][9]->Fill(chHardSum_F[jet]/recpt, weight_eS);
-	  hJetQA[1][10]->Fill(phMax_F[jet]/recpt, weight_eS);
-	  hJetQA[1][11]->Fill(phSum_F[jet]/recpt, weight_eS);
-	  hJetQA[1][12]->Fill(phHardSum_F[jet]/recpt, weight_eS);
-	  hJetQA[1][13]->Fill(neMax_F[jet]/recpt, weight_eS);
-	  hJetQA[1][14]->Fill(neSum_F[jet]/recpt, weight_eS);
-	  hJetQA[1][15]->Fill(eMax_F[jet]/recpt, weight_eS);
-	  hJetQA[1][16]->Fill(eSum_F[jet]/recpt, weight_eS);
-	  hJetQA[1][17]->Fill(muMax_F[jet]/recpt, weight_eS);
-	  hJetQA[1][18]->Fill(muSum_F[jet]/recpt, weight_eS);
+	// pt.push_back(recpt);
+	// eta.push_back(eta_F[jet]);
+	// phi.push_back(phi_F[jet]);
+	int etabin = -1;
+	for(int bin = 0; bin<nbins_eta; ++bin){
+	  if(fabs(geneta) > etabins[bin]) etabin = bin;
 	}
+	if(etabin == -1) continue;
+
+	int binx = -1;
+	for(int bin = 0; bin<nbins_pt; ++bin){
+	  if(genpt > ptbins[bin]) binx = bin;
+	}
+	if(binx == -1) continue;
+
+	//! hin JEC:
+	hJEC_hinJEC[binx][etabin]->Fill((float)(recpt)/genpt, weight_eS);
+
+	//! get the pp JEC 
+	vector<JetCorrectorParameters> vpar_Fall15v2;   
+	FactorizedJetCorrector *JEC_Fall15v2 = new FactorizedJetCorrector(vpar_Fall15v2);
+	string L2Name;
+	string L3Name;
+	L2Name="Fall15_25nsV2_MC_L2Relative_AK4PF.txt";
+	L3Name="Fall15_25nsV2_MC_L3Absolute_AK4PF.txt";    
+	// cout << "Using .txt files to update JECs..." << endl;
+	// cout << "L2: "<< L2Name << endl;
+	// cout << "L3: "<< L3Name << endl;
+	JetCorrectorParameters *parFall15_v2_l2 = new JetCorrectorParameters(L2Name.c_str());
+	JetCorrectorParameters *parFall15_v2_l3 = new JetCorrectorParameters(L3Name.c_str());
+	vpar_Fall15v2.push_back(*parFall15_v2_l2);
+	vpar_Fall15v2.push_back(*parFall15_v2_l3);
+	JEC_Fall15v2 = new FactorizedJetCorrector(vpar_Fall15v2);
+	JEC_Fall15v2->setJetEta(eta_F[jet]);
+	JEC_Fall15v2->setJetPt(rawpt_F[jet]);
+	float jetcorr = JEC_Fall15v2->getCorrection();
+	float ppjetpt = jetcorr * rawpt;
+	// cout << "rawpt = " << rawpt << ", hin jec pt = " << recpt << ", pp jec pt = "<< ppjetpt << endl;
+
+	hJEC_ppJEC[binx][etabin]->Fill((float)(ppjetpt)/genpt, weight_eS);
+
       }
       /*
       if(jet40_F == 1 && jet60_F==0 && jet80_F == 0){
@@ -958,8 +939,8 @@ void RAA_read_mc_pp(int startfile = 0,
       
     }// jet loop
 
-    hJetQA[0][19]->Fill((float)(pt_F[0]-pt_F[1])/(pt_F[0]+pt_F[1]), weight_eS);
-    hJetQA[0][20]->Fill((float)(pt_F[1]/pt_F[0]), weight_eS);
+    // hJetQA[0][19]->Fill((float)(pt_F[0]-pt_F[1])/(pt_F[0]+pt_F[1]), weight_eS);
+    // hJetQA[0][20]->Fill((float)(pt_F[1]/pt_F[0]), weight_eS);
 	    
 
     //if(pt.size() <=1) continue;
